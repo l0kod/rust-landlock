@@ -1,7 +1,7 @@
 use crate::{
-    uapi, Access, AddRuleError, AddRulesError, CompatError, Compatibility, Compatible,
-    HandleAccessError, HandleAccessesError, PathBeneathError, PathFdError, PrivateAccess,
-    PrivateRule, Rule, Ruleset, RulesetCreated, TryCompat, ABI,
+    uapi, Access, AddRuleError, AddRulesError, CompatError, CompatLevel, CompatState,
+    Compatibility, Compatible, HandleAccessError, HandleAccessesError, PathBeneathError,
+    PathFdError, PrivateAccess, PrivateRule, Rule, Ruleset, RulesetCreated, TryCompat, ABI,
 };
 use enumflags2::{bitflags, make_bitflags, BitFlags};
 use std::fs::{File, OpenOptions};
@@ -105,10 +105,15 @@ impl PrivateAccess for AccessFs {
         mut ruleset: Ruleset,
         access: BitFlags<Self>,
     ) -> Result<Ruleset, HandleAccessesError> {
+        // We need to record the requested accesses for PrivateRule::check_consistency().
         ruleset.requested_handled_fs |= access;
-        ruleset.actual_handled_fs |= access
+        ruleset.actual_handled_fs |= match access
             .try_compat(&mut ruleset.compat)
-            .map_err(HandleAccessError::Compat)?;
+            .map_err(HandleAccessError::Compat)?
+        {
+            Some(a) => a,
+            None => return Ok(ruleset),
+        };
         Ok(ruleset)
     }
 
@@ -142,7 +147,7 @@ pub struct PathBeneath<F> {
     // Ties the lifetime of a file descriptor to this object.
     _parent_fd: F,
     allowed_access: BitFlags<AccessFs>,
-    is_best_effort: bool,
+    compat_level: CompatLevel,
 }
 
 impl<F> PathBeneath<F>
@@ -164,12 +169,15 @@ where
             },
             _parent_fd: parent,
             allowed_access: access.into(),
-            is_best_effort: true,
+            compat_level: CompatLevel::BestEffort,
         }
     }
 
     // Check with our own support requirement.
-    fn filter_access(mut self) -> Result<Self, PathBeneathError> {
+    fn filter_access(
+        mut self,
+        compat: &mut Compatibility,
+    ) -> Result<Option<Self>, PathBeneathError> {
         let is_file = unsafe {
             let mut stat = zeroed();
             match libc::fstat(self.attr.parent_fd, &mut stat) {
@@ -190,17 +198,22 @@ where
         };
 
         if self.allowed_access != valid_access {
-            if self.is_best_effort {
-                self.allowed_access = valid_access;
-            } else {
-                // Linux would return EINVAL.
-                return Err(PathBeneathError::DirectoryAccess {
-                    access: self.allowed_access,
-                    incompatible: self.allowed_access ^ valid_access,
-                });
+            self.allowed_access = match self.compat_level {
+                CompatLevel::BestEffort => valid_access,
+                CompatLevel::SoftRequirement => {
+                    compat.update(CompatState::Final);
+                    return Ok(None);
+                }
+                CompatLevel::HardRequirement => {
+                    // Linux would return EINVAL.
+                    return Err(PathBeneathError::DirectoryAccess {
+                        access: self.allowed_access,
+                        incompatible: self.allowed_access ^ valid_access,
+                    });
+                }
             }
         }
-        Ok(self)
+        Ok(Some(self))
     }
 }
 
@@ -208,16 +221,22 @@ impl<F> TryCompat<AccessFs> for PathBeneath<F>
 where
     F: AsRawFd,
 {
-    fn try_compat(self, compat: &mut Compatibility) -> Result<Self, CompatError<AccessFs>> {
-        let mut filtered = self.filter_access()?;
-        filtered.attr.allowed_access = filtered.allowed_access.try_compat(compat)?.bits();
-        Ok(filtered)
+    fn try_compat(self, compat: &mut Compatibility) -> Result<Option<Self>, CompatError<AccessFs>> {
+        let mut filtered = match self.filter_access(compat)? {
+            Some(f) => f,
+            None => return Ok(None),
+        };
+        filtered.attr.allowed_access = match filtered.allowed_access.try_compat(compat)? {
+            Some(f) => f.bits(),
+            None => return Ok(None),
+        };
+        Ok(Some(filtered))
     }
 }
 
 impl<F> Compatible for PathBeneath<F> {
-    fn set_best_effort(mut self, best_effort: bool) -> Self {
-        self.is_best_effort = best_effort;
+    fn set_compatibility(mut self, level: CompatLevel) -> Self {
+        self.compat_level = level;
         self
     }
 }
@@ -233,7 +252,7 @@ fn path_beneath_try_compat() {
         let ro_access = AccessFs::ReadDir | AccessFs::ReadFile;
         assert!(matches!(
             PathBeneath::new(PathFd::new(file).unwrap(), ro_access)
-                .set_best_effort(false)
+                .set_compatibility(CompatLevel::HardRequirement)
                 .try_compat(&mut compat_copy)
                 .unwrap_err(),
             CompatError::PathBeneath(PathBeneathError::DirectoryAccess { access, incompatible })
@@ -252,11 +271,12 @@ fn path_beneath_try_compat() {
     }
 
     let full_access = AccessFs::from_all(ABI::V1);
-    for best_effort in &[true, false] {
+    for compat_level in &[CompatLevel::BestEffort, CompatLevel::HardRequirement] {
         let mut compat_copy = compat.clone();
         let raw_access = PathBeneath::new(PathFd::new("/").unwrap(), full_access)
-            .set_best_effort(*best_effort)
+            .set_compatibility(*compat_level)
             .try_compat(&mut compat_copy)
+            .unwrap()
             .unwrap()
             .attr
             .allowed_access;

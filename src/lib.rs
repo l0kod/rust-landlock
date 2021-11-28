@@ -77,8 +77,8 @@ extern crate thiserror;
 
 pub use access::Access;
 use access::PrivateAccess;
+pub use compat::{CompatLevel, Compatible, ABI};
 use compat::{CompatState, Compatibility, TryCompat};
-pub use compat::{Compatible, ABI};
 pub use enumflags2::{make_bitflags, BitFlags};
 pub use errors::{
     AccessError, AddRuleError, AddRulesError, CompatError, CreateRulesetError, HandleAccessError,
@@ -117,10 +117,10 @@ mod tests {
         // Sets default support requirement: abort the whole sandboxing for any Landlock error.
         Ok(Ruleset::new()
             // Must have at least the execute check…
-            .set_best_effort(false)
+            .set_compatibility(CompatLevel::HardRequirement)
             .handle_access(AccessFs::Execute)?
             // …and possibly others.
-            .set_best_effort(true)
+            .set_compatibility(CompatLevel::BestEffort)
             .handle_access(AccessFs::from_all(ABI::V1))?
             .create()?
             .set_no_new_privs(true)

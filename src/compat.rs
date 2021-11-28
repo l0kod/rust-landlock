@@ -70,8 +70,8 @@ fn abi_from() {
 }
 
 /// Returned by ruleset builder.
-#[cfg_attr(test, derive(Debug, PartialEq))]
-#[derive(Copy, Clone)]
+#[cfg_attr(test, derive(Debug))]
+#[derive(Copy, Clone, PartialEq)]
 pub(crate) enum CompatState {
     /// All requested restrictions are enforced.
     Full,
@@ -84,7 +84,7 @@ pub(crate) enum CompatState {
 }
 
 impl CompatState {
-    pub(crate) fn update(&mut self, other: Self) {
+    fn update(&mut self, other: Self) {
         *self = match (*self, other) {
             (CompatState::Final, _) => CompatState::Final,
             (_, CompatState::Final) => CompatState::Final,
@@ -140,20 +140,25 @@ fn compat_state_update_2() {
 // Compatibility is not public outside this crate.
 pub struct Compatibility {
     pub(crate) abi: ABI,
-    pub(crate) is_best_effort: bool,
+    pub(crate) level: CompatLevel,
     pub(crate) state: CompatState,
+    // is_mooted is required to differenciate a kernel not supporting Landlock from an error that
+    // occured with CompatLevel::SoftRequirement.  is_mooted is only changed with update() and only
+    // used to not set no_new_privs in RulesetCreated::restrict_self().
+    is_mooted: bool,
 }
 
 impl From<ABI> for Compatibility {
     fn from(abi: ABI) -> Self {
         Compatibility {
             abi,
-            is_best_effort: true,
+            level: CompatLevel::BestEffort,
             state: match abi {
                 // Forces the state as unsupported because all possible types will be useless.
                 ABI::Unsupported => CompatState::Final,
                 _ => CompatState::Full,
             },
+            is_mooted: false,
         }
     }
 }
@@ -161,8 +166,20 @@ impl From<ABI> for Compatibility {
 impl Compatibility {
     // Compatibility is an opaque struct.
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         ABI::new_current().into()
+    }
+
+    pub(crate) fn update(&mut self, state: CompatState) {
+        self.state.update(state);
+        if state == CompatState::Final {
+            self.abi = ABI::Unsupported;
+            self.is_mooted = true;
+        }
+    }
+
+    pub(crate) fn is_mooted(&self) -> bool {
+        self.is_mooted
     }
 }
 
@@ -182,6 +199,12 @@ impl Compatibility {
 /// it may be required to error out if some of these features are not available
 /// and will then not be enforced.
 pub trait Compatible {
+    /// FIXME: integrate
+    /// set_compatibility(CompatLevel::SoftRequirement) makes the ruleset moot
+    /// if one of the following requests are not supported, but don't return a
+    /// compatibility error.
+    ///
+    /// FIXME: update
     /// To enable a best-effort security approach,
     /// Landlock features that are not supported by the running system
     /// are silently ignored by default,
@@ -206,13 +229,14 @@ pub trait Compatible {
     ///
     /// ```
     /// use landlock::{
-    ///     Access, AccessFs, Compatible, PathBeneath, Ruleset, RulesetCreated, RulesetError, ABI,
+    ///     Access, AccessFs, CompatLevel, Compatible, PathBeneath, Ruleset, RulesetCreated, RulesetError,
+    ///     ABI,
     /// };
     ///
     /// fn ruleset_fragile() -> Result<RulesetCreated, RulesetError> {
     ///     Ok(Ruleset::new()
     ///         // This ruleset must handle at least the execute access.
-    ///         .set_best_effort(false)
+    ///         .set_compatibility(CompatLevel::HardRequirement)
     ///         // This handle_access() call will return
     ///         // a wrapped AccessError<AccessFs>::Incompatible error
     ///         // if the running kernel can't handle AccessFs::Execute.
@@ -221,17 +245,36 @@ pub trait Compatible {
     ///         // if they are supported by the running kernel.
     ///         // Because handle_access() replaces the previously set value,
     ///         // the new value must be a superset of AccessFs::Execute.
-    ///         .set_best_effort(true)
+    ///         .set_compatibility(CompatLevel::BestEffort)
     ///         .handle_access(AccessFs::from_all(ABI::V1))?
     ///         .create()?)
     /// }
     /// ```
-    fn set_best_effort(self, best_effort: bool) -> Self;
+    fn set_compatibility(self, level: CompatLevel) -> Self;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompatLevel {
+    /// Takes into account the requests if they are supported by the running system,
+    /// or silently ignores them otherwise.
+    /// Never returns a compatibility error.
+    BestEffort,
+    /// Takes into account the requests if they are supported by the running system,
+    /// or silently ignores all the following requests otherwise.
+    /// Never returns a compatibility error.
+    /// If not supported,
+    /// the call to [`RulesetCreated::restrict_self()`](crate::RulesetCreated::restrict_self())
+    /// will return a
+    /// [`RestrictionStatus { ruleset: RulesetStatus::NotEnforced, no_new_privs: false, }`](crate::RestrictionStatus).
+    SoftRequirement,
+    /// Takes into account the requests if they are supported by the running system,
+    /// or returns a compatibilty error otherwise.
+    HardRequirement,
 }
 
 // TryCompat is not public outside this crate.
 pub trait TryCompat<T> {
-    fn try_compat(self, compat: &mut Compatibility) -> Result<Self, CompatError<T>>
+    fn try_compat(self, compat: &mut Compatibility) -> Result<Option<Self>, CompatError<T>>
     where
         Self: Sized,
         T: Access;
