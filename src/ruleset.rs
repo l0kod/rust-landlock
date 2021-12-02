@@ -244,10 +244,10 @@ impl Ruleset {
                 handled_access_fs: self.actual_handled_fs.bits(),
             };
 
-            match self.compat.abi {
+            match self.compat.abi() {
                 ABI::Unsupported => {
                     #[cfg(test)]
-                    assert_eq!(self.compat.state, CompatState::Final);
+                    assert_eq!(self.compat.state(), CompatState::Final);
                     Ok(RulesetCreated::new(self, -1))
                 }
                 ABI::V1 => {
@@ -333,10 +333,10 @@ impl RulesetCreated {
                 Some(r) => r,
                 None => return Ok(self),
             };
-            match self.compat.abi {
+            match self.compat.abi() {
                 ABI::Unsupported => {
                     #[cfg(test)]
-                    assert_eq!(self.compat.state, CompatState::Final);
+                    assert_eq!(self.compat.state(), CompatState::Final);
                     Ok(self)
                 }
                 ABI::V1 => match unsafe {
@@ -485,7 +485,7 @@ impl RulesetCreated {
                     // To get a consistent behavior, calls this prctl whether or not
                     // Landlock is supported by the running kernel.
                     let support_nnp = support_no_new_privs();
-                    match self.compat.abi {
+                    match self.compat.abi() {
                         // It should not be an error for kernel (older than 3.5) not supporting
                         // no_new_privs.
                         ABI::Unsupported => {
@@ -507,12 +507,12 @@ impl RulesetCreated {
                 false
             };
 
-            match self.compat.abi {
+            match self.compat.abi() {
                 ABI::Unsupported => {
                     #[cfg(test)]
-                    assert_eq!(self.compat.state, CompatState::Final);
+                    assert_eq!(self.compat.state(), CompatState::Final);
                     Ok(RestrictionStatus {
-                        ruleset: self.compat.state.into(),
+                        ruleset: self.compat.state().into(),
                         no_new_privs: enforced_nnp,
                     })
                 }
@@ -520,7 +520,7 @@ impl RulesetCreated {
                     0 => {
                         self.compat.update(CompatState::Full);
                         Ok(RestrictionStatus {
-                            ruleset: self.compat.state.into(),
+                            ruleset: self.compat.state().into(),
                             no_new_privs: enforced_nnp,
                         })
                     }

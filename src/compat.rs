@@ -139,9 +139,9 @@ fn compat_state_update_2() {
 #[derive(Clone)]
 // Compatibility is not public outside this crate.
 pub struct Compatibility {
-    pub(crate) abi: ABI,
+    abi: ABI,
     pub(crate) level: CompatLevel,
-    pub(crate) state: CompatState,
+    state: CompatState,
     // is_mooted is required to differenciate a kernel not supporting Landlock from an error that
     // occured with CompatLevel::SoftRequirement.  is_mooted is only changed with update() and only
     // used to not set no_new_privs in RulesetCreated::restrict_self().
@@ -176,6 +176,14 @@ impl Compatibility {
             self.abi = ABI::Unsupported;
             self.is_mooted = true;
         }
+    }
+
+    pub(crate) fn abi(&self) -> ABI {
+        self.abi
+    }
+
+    pub(crate) fn state(&self) -> CompatState {
+        self.state
     }
 
     pub(crate) fn is_mooted(&self) -> bool {

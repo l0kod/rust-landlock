@@ -281,7 +281,7 @@ fn path_beneath_try_compat() {
             .attr
             .allowed_access;
         assert_eq!(raw_access, full_access.bits());
-        assert_eq!(compat_copy.state, CompatState::Full);
+        assert_eq!(compat_copy.state(), CompatState::Full);
     }
 }
 
