@@ -1,7 +1,33 @@
-use crate::{Access, AccessError, BitFlags, CompatError, CompatState, Compatibility, TryCompat};
+use crate::{
+    AccessError, AddRuleError, AddRulesError, BitFlags, CompatError, CompatState, Compatibility,
+    HandleAccessError, HandleAccessesError, Ruleset, TryCompat, ABI,
+};
+use enumflags2::BitFlag;
 
 #[cfg(test)]
 use crate::{make_bitflags, AccessFs};
+
+pub trait Access: PrivateAccess {
+    /// Gets the access rights defined by a specific [`ABI`].
+    fn from_all(abi: ABI) -> BitFlags<Self>;
+}
+
+pub trait PrivateAccess: BitFlag {
+    fn ruleset_handle_access(
+        ruleset: Ruleset,
+        access: BitFlags<Self>,
+    ) -> Result<Ruleset, HandleAccessesError>
+    where
+        Self: Access;
+
+    fn into_add_rules_error(error: AddRuleError<Self>) -> AddRulesError
+    where
+        Self: Access;
+
+    fn into_handle_accesses_error(error: HandleAccessError<Self>) -> HandleAccessesError
+    where
+        Self: Access;
+}
 
 // Creates an illegal/overflowed BitFlags<T> with all its bits toggled, including undefined ones.
 fn full_negation<T>(flags: BitFlags<T>) -> BitFlags<T>

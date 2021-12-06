@@ -1,9 +1,7 @@
 use crate::{
-    uapi, AccessFs, AddRuleError, AddRulesError, BitFlags, CompatState, Compatibility, Compatible,
-    CreateRulesetError, HandleAccessError, HandleAccessesError, RestrictSelfError, RulesetError,
-    TryCompat, ABI,
+    uapi, Access, AccessFs, AddRuleError, AddRulesError, BitFlags, CompatState, Compatibility,
+    Compatible, CreateRulesetError, RestrictSelfError, RulesetError, TryCompat, ABI,
 };
-use enumflags2::BitFlag;
 use libc::close;
 use std::io::Error;
 use std::mem::size_of_val;
@@ -11,28 +9,6 @@ use std::os::unix::io::RawFd;
 
 #[cfg(test)]
 use crate::*;
-
-pub trait Access: PrivateAccess {
-    /// Gets the access rights defined by a specific [`ABI`].
-    fn from_all(abi: ABI) -> BitFlags<Self>;
-}
-
-pub trait PrivateAccess: BitFlag {
-    fn ruleset_handle_access(
-        ruleset: Ruleset,
-        access: BitFlags<Self>,
-    ) -> Result<Ruleset, HandleAccessesError>
-    where
-        Self: Access;
-
-    fn into_add_rules_error(error: AddRuleError<Self>) -> AddRulesError
-    where
-        Self: Access;
-
-    fn into_handle_accesses_error(error: HandleAccessError<Self>) -> HandleAccessesError
-    where
-        Self: Access;
-}
 
 // Public interface without methods and which is impossible to implement outside this crate.
 pub trait Rule<T>: PrivateRule<T>
@@ -242,7 +218,7 @@ impl Ruleset {
     /// Consecutive calls to `handle_access()` will be interpreted as logical ORs
     /// with the previous handled accesses.
     ///
-    /// On error, returns a wrapped [`HandleAccessesError`].
+    /// On error, returns a wrapped [`HandleAccessesError`](crate::HandleAccessesError).
     /// E.g., `RulesetError::HandleAccesses(HandleAccessesError::Fs(HandleAccessError<AccessFs>))`
     pub fn handle_access<T, U>(self, access: T) -> Result<Self, RulesetError>
     where

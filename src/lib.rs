@@ -75,6 +75,8 @@ extern crate enumflags2;
 extern crate libc;
 extern crate thiserror;
 
+pub use access::Access;
+use access::PrivateAccess;
 use compat::{CompatState, Compatibility, TryCompat};
 pub use compat::{Compatible, ABI};
 pub use enumflags2::{make_bitflags, BitFlags};
@@ -83,8 +85,8 @@ pub use errors::{
     HandleAccessesError, PathBeneathError, PathFdError, RestrictSelfError, RulesetError,
 };
 pub use fs::{AccessFs, PathBeneath, PathFd};
-pub use ruleset::{Access, RestrictionStatus, Rule, Ruleset, RulesetCreated, RulesetStatus};
-use ruleset::{PrivateAccess, PrivateRule};
+use ruleset::PrivateRule;
+pub use ruleset::{RestrictionStatus, Rule, Ruleset, RulesetCreated, RulesetStatus};
 
 #[cfg(test)]
 pub use errors::TestRulesetError;
