@@ -89,6 +89,7 @@ use ruleset::{PrivateAccess, PrivateRule};
 #[cfg(test)]
 pub use errors::TestRulesetError;
 
+mod access;
 mod compat;
 mod errors;
 mod fs;
