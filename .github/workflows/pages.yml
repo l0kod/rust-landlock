@@ -5,14 +5,14 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main-pages ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   rustdoc:
-    if: github.repository == 'landlock-lsm/rust-landlock'
+    if: github.repository == 'l0kod/rust-landlock'
     runs-on: ubuntu-22.04
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
