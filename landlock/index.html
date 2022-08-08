@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Landlock is a security feature available since Linux 5.13. The goal is to enable to restrict ambient rights (e.g., global filesystem access) for a set of processes by creating safe security sandboxes as new security layers in addition to the existing system-wide access-controls. This kind of sandbox is expected to help mitigate the security impact of bugs, unexpected or malicious behaviors in applications. Landlock empowers any process, including unprivileged ones, to securely restrict themselves. More information about Landlock can be found in the official website."><meta name="keywords" content="rust, rustlang, rust-lang, landlock"><title>landlock - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../dark.css" disabled><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><script defer src="../main.js"></script>
+    <noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../landlock/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../landlock/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Crate landlock</a></h2><div class="sidebar-elems"><div class="block"><ul><li class="version">Version 0.1.0</li><li><a id="all-types" href="all.html">All Items</a></li></div></ul><section><div class="block"><ul><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></div></section><div id="sidebar-vars" data-name="landlock" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../landlock/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">landlock</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../src/landlock/lib.rs.html#1-155">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Landlock is a security feature available since Linux 5.13.
+The goal is to enable to restrict ambient rights
+(e.g., global filesystem access)
+for a set of processes by creating safe security sandboxes as new security layers
+in addition to the existing system-wide access-controls.
+This kind of sandbox is expected to help mitigate the security impact of bugs,
+unexpected or malicious behaviors in applications.
+Landlock empowers any process, including unprivileged ones, to securely restrict themselves.
+More information about Landlock can be found in the <a href="https://landlock.io">official website</a>.</p>
+<p>This crate provides a safe abstraction for the Landlock system calls, along with some helpers.</p>
+<h2 id="use-cases"><a href="#use-cases">Use cases</a></h2>
+<p>This crate is especially useful for built-in application sandboxing:</p>
+<ul>
+<li>Parser hardening (e.g., archive tools, file format conversion, renderers).</li>
+<li>(Part of) applications with limited file renaming or linking needs
+(e.g., some system or network services).</li>
+<li>Applications dealing with different levels of confidentiality
+(e.g., web browser, email server).</li>
+</ul>
+<h2 id="examples"><a href="#examples">Examples</a></h2>
+<p>Examples can be found with the <a href="struct.Ruleset.html"><code>Ruleset</code> documentation</a>
+and the <a href="https://github.com/landlock-lsm/rust-landlock/blob/master/examples/sandboxer.rs">sandboxer example</a>.</p>
+<h2 id="current-limitations"><a href="#current-limitations">Current limitations</a></h2>
+<p>This crate exposes the Landlock features available as of Linux 5.13
+and then inherits some <a href="https://www.kernel.org/doc/html/latest/userspace-api/landlock.html#current-limitations">kernel limitations</a>
+that will be addressed with future kernel releases:</p>
+<ul>
+<li>File reparenting: renaming or linking a file to a different parent directory is always denied.</li>
+<li>Filesystem topology modification: arbitrary mounts are always denied.</li>
+</ul>
+<h2 id="compatibility"><a href="#compatibility">Compatibility</a></h2>
+<p>Types defined in this crate are designed to enable the strictest Landlock configuration
+for the given kernel on which the program runs.
+In the default <a href="Compatible::set_best_effort">best-effort</a> mode,
+<a href="struct.Ruleset.html" title="Ruleset"><code>Ruleset</code></a> will determine compatibility
+with the intersection of the currently running kernel’s features
+and those required by the caller.
+This way, callers can distinguish between
+Landlock compatibility issues inherent to the current system
+(e.g., file names that don’t exist)
+and misconfiguration that should be fixed in the program
+(e.g., empty or inconsistent access rights).
+<a href="enum.RulesetError.html" title="RulesetError"><code>RulesetError</code></a> identifies such kind of errors.</p>
+<p>With <a href="Compatible::set_best_effort"><code>set_best_effort()</code></a>,
+users of the crate may identify which Landlock features are deemed required
+and which features may be downgraded to use lower security on systems
+where they can’t be enforced.
+It is discouraged to compare the system’s provided <a href="enum.ABI.html">Landlock ABI</a> version directly,
+as it is difficult to track detailed ABI differences
+which are handled thanks to the <a href="trait.Compatible.html" title="Compatible"><code>Compatible</code></a> trait.</p>
+<p>To make it easier to migrate to a new version of this library,
+we use the builder pattern
+and designed objects to require the minimal set of method arguments.
+Most <code>enum</code> are marked as <code>non_exhaustive</code> to enable backward-compatible evolutions.</p>
+<h3 id="test-strategy"><a href="#test-strategy">Test strategy</a></h3>
+<p>Developers should test their sandboxed applications
+with a kernel that supports all requested Landlock features
+and check that <a href="struct.RulesetCreated.html#method.restrict_self" title="RulesetCreated::restrict_self()"><code>RulesetCreated::restrict_self()</code></a> returns a status matching
+<a href="struct.RestrictionStatus.html"><code>Ok(RestrictionStatus { ruleset: RulesetStatus::FullyEnforced, no_new_privs: true, })</code></a>
+to make sure everything works as expected in an enforced sandbox.
+However, applications should only check that no error is returned (i.e. <code>Ok(_)</code>)
+and optionally log and inform users that the application is not fully sandboxed
+because of missing features from the running kernel.</p>
+</div></details><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.make_bitflags.html" title="landlock::make_bitflags macro">make_bitflags</a></div><div class="item-right docblock-short"><p><code>make_bitflags!</code> provides a succint syntax for creating instances of
+<code>BitFlags&lt;T&gt;</code>. Instead of repeating the name of your type for each flag
+you want to add, try <code>make_bitflags!(Flags::{Foo | Bar})</code>.</p>
+</div></div></div><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.BitFlags.html" title="landlock::BitFlags struct">BitFlags</a></div><div class="item-right docblock-short"><p>Represents a set of flags of some type <code>T</code>.
+<code>T</code> must have the <code>#[bitflags]</code> attribute applied.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.PathBeneath.html" title="landlock::PathBeneath struct">PathBeneath</a></div><div class="item-right docblock-short"><p>Landlock rule for a file hierarchy.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.PathFd.html" title="landlock::PathFd struct">PathFd</a></div><div class="item-right docblock-short"><p>Simple helper to open a file or a directory with the <code>O_PATH</code> flag.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.RestrictionStatus.html" title="landlock::RestrictionStatus struct">RestrictionStatus</a></div><div class="item-right docblock-short"><p>Status of a <a href="struct.RulesetCreated.html" title="RulesetCreated"><code>RulesetCreated</code></a>
+after calling <a href="struct.RulesetCreated.html#method.restrict_self"><code>restrict_self()</code></a>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Ruleset.html" title="landlock::Ruleset struct">Ruleset</a></div><div class="item-right docblock-short"><p>Landlock ruleset builder.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.RulesetCreated.html" title="landlock::RulesetCreated struct">RulesetCreated</a></div><div class="item-right docblock-short"><p>Ruleset created with <a href="struct.Ruleset.html#method.create" title="Ruleset::create()"><code>Ruleset::create()</code></a>.</p>
+</div></div></div><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.ABI.html" title="landlock::ABI enum">ABI</a></div><div class="item-right docblock-short"><p>Version of the Landlock <a href="https://en.wikipedia.org/wiki/Application_binary_interface">ABI</a>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.AccessError.html" title="landlock::AccessError enum">AccessError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.AccessFs.html" title="landlock::AccessFs enum">AccessFs</a></div><div class="item-right docblock-short"><p>File system access right.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.AddRuleError.html" title="landlock::AddRuleError enum">AddRuleError</a></div><div class="item-right docblock-short"><p>Identifies errors when adding a rule to a ruleset.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.AddRulesError.html" title="landlock::AddRulesError enum">AddRulesError</a></div><div class="item-right docblock-short"><p>Identifies errors when adding rules to a ruleset thanks to an iterator returning
+Result&lt;Rule, E&gt; items.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.CompatError.html" title="landlock::CompatError enum">CompatError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.CompatLevel.html" title="landlock::CompatLevel enum">CompatLevel</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.CreateRulesetError.html" title="landlock::CreateRulesetError enum">CreateRulesetError</a></div><div class="item-right docblock-short"><p>Identifies errors when creating a ruleset.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.HandleAccessError.html" title="landlock::HandleAccessError enum">HandleAccessError</a></div><div class="item-right docblock-short"><p>Identifies errors when updating the ruleset’s handled access-rights.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.HandleAccessesError.html" title="landlock::HandleAccessesError enum">HandleAccessesError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.PathBeneathError.html" title="landlock::PathBeneathError enum">PathBeneathError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.PathFdError.html" title="landlock::PathFdError enum">PathFdError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.RestrictSelfError.html" title="landlock::RestrictSelfError enum">RestrictSelfError</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.RulesetError.html" title="landlock::RulesetError enum">RulesetError</a></div><div class="item-right docblock-short"><p>Maps to all errors that can be returned by a ruleset action.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.RulesetStatus.html" title="landlock::RulesetStatus enum">RulesetStatus</a></div><div class="item-right docblock-short"><p>Enforcement status of a ruleset.</p>
+</div></div></div><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Access.html" title="landlock::Access trait">Access</a></div><div class="item-right docblock-short"></div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Compatible.html" title="landlock::Compatible trait">Compatible</a></div><div class="item-right docblock-short"><p>Properly handles runtime unsupported features.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Rule.html" title="landlock::Rule trait">Rule</a></div><div class="item-right docblock-short"></div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="landlock" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.1 (e092d0b6b 2022-07-16)" ></div>
+</body></html>
